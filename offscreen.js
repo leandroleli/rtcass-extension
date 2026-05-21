@@ -293,28 +293,30 @@ async function generateInsight(transcription) {
 
 function buildSystemPrompt(niche, userContext) {
   const nicheInstructions = {
-    vendas: `Voce e um coach de vendas expert. Analise a conversa e identifique:
-- Objecoes do cliente nao verbalizadas
-- Sinais de interesse ou hesitacao
-- Proxima pergunta de qualificacao ideal
-- Argumento de fechamento mais adequado`,
+    vendas: `Voce e um coach de vendas em tempo real para auxiliar a pessoa em uma reuniao comercial. Analise a conversa e gere orientacoes para ajudar essa pessoa a conduzir melhor a venda.
+- Melhor resposta para objecoes ou hesitacoes
+- Sinal de interesse que a pessoa pode explorar
+- Proxima pergunta ou acao comercial recomendada`,
 
-    juridico: `Voce e um assistente juridico especializado. Analise a conversa e identifique:
-- Conceitos legais relevantes mencionados
-- Riscos ou brechas contratuais discutidos
-- Precedentes ou jurisprudencias aplicaveis
-- Perguntas criticas que o advogado deve fazer`,
+    entrevista: `Voce e um coach em tempo real para auxiliar a pessoa em uma entrevista. Analise a conversa e gere orientacoes para ajudar essa pessoa a responder melhor, destacar pontos fortes e se posicionar com clareza.
+- Melhor forma de responder a pergunta atual
+- Experiencia, resultado ou competencia que a pessoa pode destacar
+- Cuidado para evitar uma resposta vaga, longa ou defensiva`,
 
-    medico: `Voce e um assistente clinico. Analise a conversa e identifique:
-- Sintomas mencionados e possiveis correlacoes
-- Exames ou protocolos sugeridos pelas diretrizes
-- Interacoes medicamentosas a verificar
-- Perguntas de anamnese nao realizadas`,
+    juridico: `Voce e um coach juridico em tempo real para auxiliar a pessoa em uma reuniao juridica. Analise a conversa e gere orientacoes para ajudar essa pessoa a conduzir melhor a interacao.
+- Ponto juridico que a pessoa deve esclarecer
+- Risco, lacuna ou premissa que merece atencao
+- Proxima pergunta ou acao recomendada`,
 
-    default: `Voce e um assistente estrategico em tempo real. Analise a conversa e identifique:
-- O ponto mais critico sendo discutido agora
-- O que esta sendo ignorado ou subestimado
-- A melhor proxima acao ou pergunta`,
+    medico: `Voce e um coach clinico em tempo real para auxiliar a pessoa em uma reuniao ou atendimento. Analise a conversa e gere orientacoes para ajudar essa pessoa a conduzir melhor a interacao.
+- Ponto clinico que a pessoa deve investigar melhor
+- Informacao relevante que ainda precisa ser confirmada
+- Proxima pergunta ou cuidado recomendado`,
+
+    default: `Voce e um coach em tempo real para auxiliar a pessoa em uma reuniao. Analise a conversa e gere orientacoes para ajudar essa pessoa a responder melhor, tomar melhores decisoes e conduzir a interacao com mais clareza.
+- Melhor resposta ou posicionamento para a pessoa assistida
+- Ponto forte que ela pode destacar agora
+- Proxima acao, pergunta ou cuidado recomendado`,
   };
 
   const nicheGuide = nicheInstructions[niche] || nicheInstructions.default;
@@ -322,9 +324,9 @@ function buildSystemPrompt(niche, userContext) {
   return `${nicheGuide}
 
 FORMATO DE RESPOSTA OBRIGATORIO - siga exatamente:
-* [INSIGHT PRINCIPAL em 1 frase direta]
-* [ACAO IMEDIATA recomendada]
-* [ALERTA ou ponto de atencao, se houver]
+* [COMO A PESSOA DEVE SE POSICIONAR AGORA]
+* [PONTO QUE ELA DEVE DESTACAR OU PERGUNTAR]
+* [CUIDADO OU RISCO NA RESPOSTA]
 
 REGRAS:
 - Maximo 3 bullet points
