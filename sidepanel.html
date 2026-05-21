@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>RTCaaS</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #111827;
+      color: #f9fafb;
+      width: 100%;
+      min-height: 100vh;
+    }
+
+    .container {
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0 0 12px;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      width: 100%;
+      margin-top: 8px;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      box-sizing: border-box;
+    }
+
+    button {
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: 0.7;
+    }
+
+    button.active {
+      background: #dc2626;
+    }
+
+    label {
+      display: block;
+      margin-top: 12px;
+      font-size: 12px;
+      color: #d1d5db;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin: 16px 0;
+    }
+
+    .tab {
+      flex: 1;
+      background: #374151;
+      font-size: 12px;
+    }
+
+    .tab.active {
+      background: #2563eb;
+    }
+
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    .status-pill {
+      padding: 8px;
+      border-radius: 999px;
+      background: #374151;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .status-pill.active {
+      background: #059669;
+    }
+
+    .insight-card,
+    .transcript-line {
+      background: #1f2937;
+      border-radius: 8px;
+    }
+
+    .insight-card {
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+
+    .bullet-line {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 6px;
+      line-height: 1.35;
+    }
+
+    .bullet-marker {
+      color: #60a5fa;
+    }
+
+    .transcript-line {
+      padding: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .empty-state {
+      color: #9ca3af;
+      text-align: center;
+      margin-top: 24px;
+    }
+
+    .alert {
+      background: #7f1d1d;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      line-height: 1.35;
+    }
+
+    textarea {
+      height: 100px;
+      resize: vertical;
+    }
+
+    .status-text {
+      margin-top: 16px;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    .status-text.processing {
+      color: #93c5fd;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>RTCaaS</h1>
+
+    <div id="statusPill" class="status-pill">
+      <span id="statusLabel">Inativo</span>
+    </div>
+
+    <button id="captureBtn">Iniciar Captura</button>
+    <button id="clearBtn">Limpar</button>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="insights">Insights</button>
+      <button class="tab" data-tab="transcript">Transcricao</button>
+      <button class="tab" data-tab="setup">Config</button>
+    </div>
+
+    <div id="panel-insights" class="panel active">
+      <div>Insights gerados: <span id="insightBadge">0</span></div>
+      <div id="insightsEmpty" class="empty-state">Aguardando insights...</div>
+    </div>
+
+    <div id="panel-transcript" class="panel">
+      <div id="transcriptFeed">
+        <div class="empty-state">
+          <div class="empty-icon">...</div>
+          <div class="empty-text">Aguardando audio...</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-setup" class="panel">
+      <label for="apiKeyInput">Groq API Key</label>
+      <input id="apiKeyInput" type="password" placeholder="Cole sua API Key da Groq" />
+
+      <label for="nicheSelect">Nicho</label>
+      <select id="nicheSelect">
+        <option value="default">Geral / Consultoria</option>
+        <option value="vendas">Vendas / Comercial</option>
+        <option value="juridico">Juridico / Advocacia</option>
+        <option value="medico">Medico / Clinico</option>
+      </select>
+
+      <label for="contextInput">Contexto adicional</label>
+      <textarea id="contextInput" placeholder="Ex: reuniao comercial com cliente enterprise..."></textarea>
+
+      <button id="saveConfigBtn">Salvar Configuracao</button>
+    </div>
+
+    <div id="statusBarText" class="status-text">Pronto para iniciar</div>
+  </div>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>
