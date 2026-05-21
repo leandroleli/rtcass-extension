@@ -9,6 +9,7 @@ const els = {
   insightPanel: document.getElementById("panel-insights"),
   transcriptFeed: document.getElementById("transcriptFeed"),
   apiKeyInput: document.getElementById("apiKeyInput"),
+  transcriptFolderInput: document.getElementById("transcriptFolderInput"),
   nicheSelect: document.getElementById("nicheSelect"),
   contextInput: document.getElementById("contextInput"),
   saveConfigBtn: document.getElementById("saveConfigBtn"),
@@ -34,11 +35,13 @@ async function init() {
 async function loadSavedConfig() {
   const data = await chrome.storage.local.get([
     "groqApiKey",
+    "transcriptFolder",
     "userNiche",
     "userContext",
   ]);
 
   if (data.groqApiKey) els.apiKeyInput.value = data.groqApiKey;
+  if (data.transcriptFolder) els.transcriptFolderInput.value = data.transcriptFolder;
   if (data.userNiche) els.nicheSelect.value = data.userNiche;
   if (data.userContext) els.contextInput.value = data.userContext;
 }
@@ -102,6 +105,7 @@ async function stopCapture() {
 
 async function saveConfig() {
   const apiKey = els.apiKeyInput.value.trim();
+  const transcriptFolder = els.transcriptFolderInput.value.trim();
   const niche = els.nicheSelect.value;
   const context = els.contextInput.value.trim();
 
@@ -112,6 +116,7 @@ async function saveConfig() {
 
   await chrome.storage.local.set({
     groqApiKey: apiKey,
+    transcriptFolder,
     userNiche: niche,
     userContext: context,
   });

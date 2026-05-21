@@ -17,6 +17,7 @@ let state = {
   lastInsightAt: 0,
   insightThrottle: 8000,
   processingQueue: Promise.resolve(),
+  transcriptLines: [],
   config: null,
 };
 
@@ -37,9 +38,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true;
 
     case "STOP_RECORDING":
-      stopRecording();
-      sendResponse({ success: true });
-      return false;
+      stopRecording()
+        .then(() => sendResponse({ success: true }))
+        .catch((err) => sendResponse({ success: false, error: err.message }));
+      return true;
 
     default:
       return false;
@@ -60,6 +62,7 @@ async function startRecording(streamId, config) {
     state.transcriptionBuffer = "";
     state.lastInsightAt = 0;
     state.processingQueue = Promise.resolve();
+    state.transcriptLines = [];
 
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -88,13 +91,17 @@ async function startRecording(streamId, config) {
   }
 }
 
-function stopRecording() {
+async function stopRecording() {
+  await state.processingQueue.catch(() => {});
+  await saveTranscript();
   cleanupRecordingState();
 
   notifyStatus(false);
 }
 
 function cleanupRecordingState() {
+  state.isCapturing = false;
+
   if (state.segmentTimer) {
     clearTimeout(state.segmentTimer);
   }
@@ -111,12 +118,12 @@ function cleanupRecordingState() {
     state.audioContext.close().catch(() => {});
   }
 
-  state.isCapturing = false;
   state.mediaRecorder = null;
   state.audioStream = null;
   state.audioContext = null;
   state.segmentTimer = null;
   state.transcriptionBuffer = "";
+  state.transcriptLines = [];
   state.config = null;
   state.processingQueue = Promise.resolve();
 }
@@ -191,6 +198,10 @@ async function processAudioChunk(audioBlob) {
     }
 
     notifyExtension({ type: "TRANSCRIPTION", text: transcription });
+    state.transcriptLines.push({
+      timestamp: new Date().toLocaleTimeString("pt-BR"),
+      text: transcription,
+    });
     state.transcriptionBuffer += " " + transcription;
 
     if (state.transcriptionBuffer.length > 800) {
@@ -342,4 +353,50 @@ function isInvalidMediaError(errorText) {
     errorText.includes("invalid_media_file") ||
     errorText.includes("could not process file")
   );
+}
+
+async function saveTranscript() {
+  if (!state.transcriptLines.length || !state.config) {
+    return;
+  }
+
+  const content = buildTranscriptContent();
+  const response = await chrome.runtime.sendMessage({
+    type: "SAVE_TRANSCRIPT",
+    payload: {
+      folder: state.config.transcriptFolder,
+      title: state.config.meetingTitle,
+      url: state.config.meetingUrl,
+      startedAt: state.config.meetingStartedAt,
+      content,
+    },
+  });
+
+  if (!response?.success) {
+    throw new Error(response?.error || "Falha ao salvar transcricao.");
+  }
+}
+
+function buildTranscriptContent() {
+  const startedAt = state.config.meetingStartedAt
+    ? new Date(state.config.meetingStartedAt).toLocaleString("pt-BR")
+    : new Date().toLocaleString("pt-BR");
+  const endedAt = new Date().toLocaleString("pt-BR");
+  const title = state.config.meetingTitle || "Reuniao";
+  const url = state.config.meetingUrl || "";
+
+  const lines = [
+    `RTCaaS - Transcricao`,
+    `Reuniao: ${title}`,
+    `URL: ${url}`,
+    `Inicio: ${startedAt}`,
+    `Fim: ${endedAt}`,
+    "",
+    "Transcricao:",
+    "",
+    ...state.transcriptLines.map((line) => `[${line.timestamp}] ${line.text}`),
+    "",
+  ];
+
+  return lines.join("\n");
 }

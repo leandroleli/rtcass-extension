@@ -104,6 +104,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       notifySidePanel(message.payload);
       return false;
 
+    case "SAVE_TRANSCRIPT":
+      saveTranscriptFile(message.payload)
+        .then(() => sendResponse({ success: true }))
+        .catch((err) => {
+          notifySidePanel({ type: "ERROR", message: err.message });
+          sendResponse({ success: false, error: err.message });
+        });
+      return true;
+
     default:
       return false;
   }
@@ -127,6 +136,7 @@ async function startAudioCapture(tabId, streamIdOrPromise, offscreenReadyPromise
 
   const config = await chrome.storage.local.get([
     "groqApiKey",
+    "transcriptFolder",
     "userNiche",
     "userContext",
   ]);
@@ -155,6 +165,10 @@ async function startAudioCapture(tabId, streamIdOrPromise, offscreenReadyPromise
   } else {
     await setupOffscreenDocument();
   }
+
+  config.meetingTitle = tab.title || "Reuniao";
+  config.meetingUrl = tab.url || "";
+  config.meetingStartedAt = new Date().toISOString();
 
   const response = await chrome.runtime.sendMessage({
     target: "offscreen",
@@ -249,4 +263,68 @@ function formatCapturePermissionError(error) {
   }
 
   return message;
+}
+
+async function saveTranscriptFile(payload) {
+  if (!payload?.content?.trim()) {
+    return;
+  }
+
+  const folder = normalizeDownloadFolder(payload.folder || "RTCaaS");
+  const filename = `${folder}/${buildTranscriptFilename(payload)}.txt`;
+  const url = buildTextDataUrl(payload.content);
+
+  await chrome.downloads.download({
+    url,
+    filename,
+    conflictAction: "uniquify",
+    saveAs: false,
+  });
+
+  notifySidePanel({
+    type: "STATUS_TEXT",
+    message: `Transcricao salva em Downloads/${filename}`,
+  });
+}
+
+function buildTranscriptFilename(payload) {
+  const startedAt = new Date(payload.startedAt || Date.now());
+  const stamp = startedAt
+    .toISOString()
+    .replace(/[:.]/g, "-")
+    .replace("T", "_")
+    .replace("Z", "");
+  const title = sanitizePathPart(payload.title || "reuniao").slice(0, 80);
+
+  return `${stamp}_${title}`;
+}
+
+function normalizeDownloadFolder(folder) {
+  const normalized = String(folder || "RTCaaS")
+    .replace(/\\/g, "/")
+    .split("/")
+    .map((part) => sanitizePathPart(part.trim()))
+    .filter(Boolean)
+    .join("/");
+
+  return normalized || "RTCaaS";
+}
+
+function sanitizePathPart(value) {
+  return String(value || "reuniao")
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/[. ]+$/g, "") || "reuniao";
+}
+
+function buildTextDataUrl(content) {
+  const bytes = new TextEncoder().encode(content);
+  let binary = "";
+
+  for (let i = 0; i < bytes.length; i += 1) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+
+  return `data:text/plain;charset=utf-8;base64,${btoa(binary)}`;
 }
